@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+gunicorn
+torch
+transformers
+scikit-learn
+sklearn-crfsuite
+seqeval
+datasets
+evaluate
+accelerate
+joblib
+numpy
+python-multipart
+pypdf

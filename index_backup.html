@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NER Intelligence Studio</title>
+<style>
+:root {
+  --bg:#080b16; --sidebar:#0b1020; --panel:#11182b;
+  --panel2:#151d35; --line:#283452; --text:#f0f3ff;
+  --muted:#929fbd; --purple:#a38bff; --blue:#70b6ff;
+  --green:#54e0b1; --pink:#ff8dca; --orange:#ffcb75;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 70% 0%,#151b40 0,transparent 42%),var(--bg);color:var(--text);font-family:Inter,"Segoe UI",sans-serif;font-size:14px}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.app{min-height:100vh}
+.sidebar{position:fixed;inset:0 auto 0 0;width:245px;padding:25px 16px;background:rgba(9,13,28,.96);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:10}
+.brand{font-size:18px;font-weight:850;letter-spacing:-.5px;padding:0 10px 30px}
+.brand span{background:linear-gradient(90deg,#b19cff,#71baff);color:transparent;background-clip:text}
+.brand-icon{color:var(--purple);margin-right:6px}
+.nav-label{font-size:10px;letter-spacing:2px;color:#697697;font-weight:800;padding:0 12px;margin:8px 0 12px}
+.nav{display:flex;align-items:center;gap:12px;width:100%;padding:13px 12px;border:1px solid transparent;border-radius:11px;background:transparent;color:#9ba8c8;text-align:left;margin-bottom:5px;transition:.2s}
+.nav .ico{width:22px;text-align:center;font-size:17px}
+.nav:hover{background:#151c33;color:white}
+.nav.active{color:white;background:linear-gradient(100deg,#302552,#172c4d);border-color:#494171;box-shadow:inset 3px 0 #aa91ff}
+.side-bottom{margin-top:auto}
+.backend-note{padding:13px;background:#111a2b;border:1px solid var(--line);border-radius:12px;font-size:12px;color:var(--muted);line-height:1.8}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px}
+.main{margin-left:245px;min-height:100vh}
+.topbar{height:72px;border-bottom:1px solid #202b45;display:flex;align-items:center;justify-content:space-between;padding:0 35px;background:#080c19a8;backdrop-filter:blur(15px);position:sticky;top:0;z-index:5}
+.breadcrumb{color:var(--muted);font-size:12px}.breadcrumb strong{color:var(--text)}
+.top-right{display:flex;gap:10px;align-items:center}
+.api-pill{padding:8px 11px;border:1px solid #245648;border-radius:30px;color:var(--green);font-size:11px;background:#10251f}
+.avatar{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#7358cb,#3c78bd);font-weight:800}
+.content{max-width:1450px;margin:auto;padding:35px}
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.eyebrow{font-size:10px;letter-spacing:2.5px;color:#ad9aff;font-weight:850}
+h1{font-size:clamp(28px,3vw,42px);letter-spacing:-1.5px;line-height:1.15;margin:12px 0}
+h2{font-size:16px;margin:0 0 18px}
+h3{font-size:14px;margin:0 0 10px}
+.sub{color:var(--muted);line-height:1.8;max-width:720px;margin:0}
+.gradient{background:linear-gradient(90deg,#b5a0ff,#77baff);color:transparent;background-clip:text}
+.page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin-bottom:27px}
+.card{min-width:0;background:linear-gradient(145deg,#141c32eF,#0e1528f5);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 15px 40px #0002}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(3,minmax(0,1fr));margin:25px 0}
+.metric-label{font-size:12px;color:var(--muted)}
+.metric{font-size:31px;font-weight:850;margin:12px 0 7px;letter-spacing:-1px}
+.metric-note{font-size:11px;color:#8493b6}
+.stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.stat-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:#302651;color:#c5b4ff;font-size:18px}
+.stat-icon.blue{background:#172e4c;color:var(--blue)}
+.stat-icon.green{background:#12362f;color:var(--green)}
+.two{grid-template-columns:1.1fr .9fr}
+.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}
+.btn{padding:11px 15px;border-radius:9px;border:1px solid #344362;background:#1a2540;color:#e8edff;font-weight:750;font-size:12px}
+.btn:hover{filter:brightness(1.18)}
+.btn.primary{background:linear-gradient(100deg,#9d80ff,#64aaff);border:0;color:#091126}
+.btn:disabled{opacity:.45;cursor:wait}
+textarea{display:block;width:100%;min-height:175px;resize:vertical;background:#090f20;color:var(--text);border:1px solid #334263;border-radius:11px;padding:15px;line-height:1.8;outline:none}
+textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px #a38bff18}
+.field-foot{display:flex;justify-content:space-between;gap:10px;margin-top:9px;color:var(--muted);font-size:11px}
+.message{font-size:12px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere;margin-top:13px}
+.highlight{padding:17px;background:#090f20;border:1px solid #263350;border-radius:11px;line-height:2.8;overflow-wrap:anywhere;min-height:90px}
+mark{padding:5px 6px;border-radius:5px;color:#11152a;font-weight:750}
+.PER{background:#b8a5ff}.ORG{background:#66dfb6}.LOC{background:#ffcc73}.MISC{background:#ffa1d7}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.legend span{font-size:10px;border-radius:6px;padding:6px 8px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;text-align:left;font-size:12px}
+td,th{padding:13px 10px;border-bottom:1px solid #26314d}
+th{color:#8e9dbd;font-size:10px;text-transform:uppercase;letter-spacing:1px}
+tbody tr:hover{background:#ffffff05}
+.type{font-weight:850}
+.badge{font-size:10px;font-weight:800;padding:5px 8px;border-radius:6px;display:inline-block}
+.badge.PER{color:#c9baff;background:#352a59}.badge.ORG{color:#71ebc4;background:#123c32}
+.badge.LOC{color:#ffda96;background:#49371c}.badge.MISC{color:#ffb6df;background:#47253d}
+.empty{color:var(--muted);font-size:12px;line-height:1.8}
+.divider{height:1px;background:#26314b;margin:19px 0}
+.section-gap{margin-top:18px}
+.model-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}
+.model-name{font-weight:850;font-size:16px}
+.model-tag{font-size:10px;color:var(--green);border:1px solid #245648;background:#10251f;padding:5px 8px;border-radius:20px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.chip{font-size:11px;background:#1a2643;border:1px solid #344363;border-radius:8px;padding:7px 9px}
+.bar-row{display:grid;grid-template-columns:55px 1fr 25px;gap:9px;align-items:center;margin:14px 0;font-size:11px}
+.bar{height:8px;background:#222c48;border-radius:20px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,#a58aff,#64b8ff);border-radius:20px;transition:width .3s}
+.chart-list{display:flex;flex-direction:column;gap:18px}
+.chart-row{display:grid;grid-template-columns:100px 1fr 35px;gap:12px;align-items:center;font-size:12px}
+.smallbar{height:10px;border-radius:20px;background:#202b46;overflow:hidden}
+.smallbar span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#a38bff,#6ab9ff)}
+.callout{padding:14px;border-radius:11px;border:1px solid #344061;background:#121c33;color:#aebcda;font-size:12px;line-height:1.7}
+.recent{display:flex;flex-direction:column;gap:0}
+.recent-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #26314b}
+.recent-item:last-child{border-bottom:0}
+.recent-title{font-size:12px;font-weight:750;overflow-wrap:anywhere}
+.recent-sub{font-size:11px;color:var(--muted);margin-top:5px}
+.menu-toggle{display:none}
+@media(max-width:1000px){.sidebar{width:210px}.main{margin-left:210px}.content{padding:24px}.two{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){
+.sidebar{width:72px;padding:20px 9px}.brand{font-size:0;padding:5px 9px 30px}.brand-icon{font-size:23px}.brand span{display:none}
+.nav{justify-content:center;padding:13px 5px}.nav .ico{font-size:20px}.nav .nav-text,.nav-label,.backend-note{display:none}
+.main{margin-left:72px}.topbar{height:62px;padding:0 15px}.content{padding:19px 13px}.stats{grid-template-columns:1fr}.three{grid-template-columns:1fr}.page-head{align-items:flex-start;flex-direction:column}.metric{font-size:28px}.card{padding:17px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><span class="brand-icon">✦</span> NER <span>Intelligence Studio</span></div>
+  <div class="nav-label">WORKSPACE</div>
+  <button class="nav active" data-page="dashboard"><span class="ico">▦</span><span class="nav-text">Dashboard</span></button>
+  <button class="nav" data-page="analyzer"><span class="ico">⌕</span><span class="nav-text">NER Analyzer</span></button>
+  <button class="nav" data-page="comparison"><span class="ico">⇄</span><span class="nav-text">Model Comparison</span></button>
+  <button class="nav" data-page="analytics"><span class="ico">▥</span><span class="nav-text">Analytics</span></button>
+  <div class="side-bottom">
+    <div class="nav-label">SYSTEM</div>
+    <div class="backend-note"><span class="dot"></span><strong style="color:#e6edff">Local workspace</strong><br>API: 127.0.0.1:8000<br><span style="font-size:10px">Start app.py backend to analyze.</span></div>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="breadcrumb">Workspace &nbsp; / &nbsp; <strong id="crumb">Dashboard</strong></div>
+    <div class="top-right"><div class="api-pill"><span class="dot"></span> Local API</div><div class="avatar">N</div></div>
+  </header>
+
+  <main class="content">
+    <section class="page active" id="page-dashboard">
+      <div class="page-head">
+        <div><div class="eyebrow">YOUR NLP WORKSPACE</div><h1>Text intelligence,<br><span class="gradient">made visible.</span></h1><p class="sub">Explore named entities, inspect model predictions and compare BERT with a CRF baseline.</p></div>
+        <button class="btn primary" onclick="navigate('analyzer')">＋ New analysis</button>
+      </div>
+      <div class="grid stats">
+        <div class="card"><div class="stat-top"><span class="metric-label">Last analysis entities</span><span class="stat-icon">✧</span></div><div class="metric" id="dashEntities">—</div><div class="metric-note">From your latest BERT analysis</div></div>
+        <div class="card"><div class="stat-top"><span class="metric-label">Entity categories</span><span class="stat-icon blue">◇</span></div><div class="metric" id="dashTypes">—</div><div class="metric-note">Distinct types detected</div></div>
+        <div class="card"><div class="stat-top"><span class="metric-label">Average confidence</span><span class="stat-icon green">◎</span></div><div class="metric" id="dashConfidence">—</div><div class="metric-note">Mean confidence of latest BERT results</div></div>
+      </div>
+      <div class="grid two">
+        <div class="card"><h2>✦ Quick analysis</h2><p class="sub" style="margin-bottom:18px">Jump into the analyzer to identify people, organizations, locations and other entities in text.</p><button class="btn primary" onclick="navigate('analyzer')">Open NER Analyzer →</button><button class="btn" style="margin-left:7px" onclick="navigate('comparison')">Compare models</button></div>
+        <div class="card"><h2>Recent activity</h2><div id="recent" class="recent"><p class="empty">Your completed analyses will appear here during this browser session.</p></div></div>
+      </div>
+      <div class="card section-gap"><h2>Workspace overview</h2><div class="grid three"><div><span class="dot"></span>BERT token classifier<p class="empty">Fine-tuned model</p></div><div><span class="dot"></span>CRF baseline<p class="empty">Saved sklearn-crfsuite model</p></div><div><span class="dot"></span>Entity labels<p class="empty">PER · ORG · LOC · MISC</p></div></div></div>
+    </section>
+
+    <section class="page" id="page-analyzer">
+      <div class="page-head"><div><div class="eyebrow">TEXT PROCESSING</div><h1>NER <span class="gradient">Analyzer</span></h1><p class="sub">Enter text and let your fine-tuned BERT model identify named entities.</p></div><span class="api-pill">BERT · Token Classification</span></div>
+      <div class="card"><h2>Text input</h2><textarea id="input" maxlength="100000" placeholder="Paste or type your text here...&#10;&#10;Example: Elon Musk founded SpaceX in California."></textarea><div class="field-foot"><span>Supports up to 100,000 characters</span><span id="charCount">0 / 100,000</span></div><div class="actions"><button class="btn primary" id="analyze">✦ Analyze with BERT</button><button class="btn" id="sample">Load sample</button><button class="btn" id="clear">Clear text</button></div><p class="message" id="message">Ready to analyze. Enter text above to begin.</p></div>
+      <div class="card section-gap"><h2>Highlighted text</h2><div id="highlighted" class="highlight">Your analyzed text will appear here, with detected entities highlighted.</div><div class="legend"><span class="PER">PER · Person</span><span class="ORG">ORG · Organization</span><span class="LOC">LOC · Location</span><span class="MISC">MISC · Miscellaneous</span></div></div>
+      <div class="card section-gap"><div class="page-head" style="margin-bottom:14px;align-items:center;flex-direction:row"><h2 style="margin:0">Detected entities</h2><button class="btn" id="export" disabled>↓ Export CSV</button></div><div class="table-wrap"><table><thead><tr><th>Entity</th><th>Type</th><th>Confidence</th></tr></thead><tbody id="rows"><tr><td colspan="3" class="empty">No analysis results yet.</td></tr></tbody></table></div></div>
+    </section>
+
+    <section class="page" id="page-comparison">
+      <div class="page-head"><div><div class="eyebrow">MODEL EVALUATION</div><h1>Model <span class="gradient">Comparison</span></h1><p class="sub">Run both models on the same text and compare their entity predictions side by side.</p></div></div>
+      <div class="card"><h2>Input text</h2><textarea id="compareInput" maxlength="100000" style="min-height:125px" placeholder="Enter the same text for BERT and CRF..."></textarea><div class="actions"><button class="btn primary" id="compare">⇄ Compare BERT + CRF</button><button class="btn" id="compareSample">Load sample</button></div><p id="compareMessage" class="message">Run a comparison to see both models' results.</p></div>
+      <div class="grid two section-gap">
+        <div class="card"><div class="model-head"><div class="model-name">BERT <span class="gradient">Transformer</span></div><span class="model-tag">MODEL 01</span></div><div class="metric" id="bertCount">—</div><div class="metric-label">Entities detected</div><div class="divider"></div><h3>Predictions</h3><div class="chips" id="bertChips"><span class="empty">No results yet.</span></div></div>
+        <div class="card"><div class="model-head"><div class="model-name">CRF <span class="gradient">Baseline</span></div><span class="model-tag">MODEL 02</span></div><div class="metric" id="crfCount">—</div><div class="metric-label">Entities detected</div><div class="divider"></div><h3>Predictions</h3><div class="chips" id="crfChips"><span class="empty">No results yet.</span></div></div>
+      </div>
+      <div class="card section-gap"><h2>Entity count comparison</h2><div class="bar-row"><span>BERT</span><div class="bar"><div class="fill" id="bertBar" style="width:0%"></div></div><span id="bertBarNum">—</span></div><div class="bar-row"><span>CRF</span><div class="bar"><div class="fill" id="crfBar" style="width:0%"></div></div><span id="crfBarNum">—</span></div><div class="callout" id="compareNote">Entity counts show how many entities each model predicted. They do not, by themselves, measure accuracy.</div><div class="actions"><button class="btn" id="exportCompare" disabled>↓ Export comparison CSV</button></div></div>
+    </section>
+
+    <section class="page" id="page-analytics">
+      <div class="page-head"><div><div class="eyebrow">RESULT INSIGHTS</div><h1>Analysis <span class="gradient">Analytics</span></h1><p class="sub">Explore the distribution of entities from your most recent BERT analysis.</p></div></div>
+      <div class="grid stats">
+        <div class="card"><div class="metric-label">Entities detected</div><div class="metric" id="anaTotal">—</div><div class="metric-note">Latest analysis</div></div>
+        <div class="card"><div class="metric-label">Distinct categories</div><div class="metric" id="anaTypes">—</div><div class="metric-note">Types in current result</div></div>
+        <div class="card"><div class="metric-label">Average confidence</div><div class="metric" id="anaConfidence">—</div><div class="metric-note">BERT predictions only</div></div>
+      </div>
+      <div class="grid two">
+        <div class="card"><h2>Entity distribution</h2><div id="distribution" class="chart-list"><p class="empty">Run an analysis first to generate distribution data.</p></div></div>
+        <div class="card"><h2>Category breakdown</h2><div id="breakdown" class="chart-list"><p class="empty">Category details will appear here.</p></div></div>
+      </div>
+      <div class="callout section-gap">Note: these analytics summarize model predictions for the latest text. They are not benchmark precision, recall, or F1 scores.</div>
+    </section>
+  </main>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+const $ = id => document.getElementById(id);
+let lastEntities = [], lastComparison = null, latestText = "";
+let recentItems = [];
+
+function navigate(name) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav").forEach(n => n.classList.toggle("active", n.dataset.page === name));
+  $("page-" + name).classList.add("active");
+  $("crumb").textContent = ({dashboard:"Dashboard",analyzer:"NER Analyzer",comparison:"Model Comparison",analytics:"Analytics"})[name];
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll(".nav").forEach(b => b.addEventListener("click", () => navigate(b.dataset.page)));
+$("input").addEventListener("input", () => $("charCount").textContent = $("input").value.length.toLocaleString() + " / 100,000");
+
+async function post(path,text) {
+  const r = await fetch(API + path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  let data; try {data=await r.json()} catch {throw new Error("Unreadable API response")}
+  if(!r.ok) throw new Error(data.detail || "API error " + r.status);
+  return data;
+}
+function updateMetrics(entities) {
+  const count = entities.length, types = new Set(entities.map(e=>e.type)).size;
+  const withConfidence = entities.filter(e=>Number.isFinite(Number(e.confidence)));
+  const avg = withConfidence.length ? withConfidence.reduce((s,e)=>s+Number(e.confidence),0)/withConfidence.length : null;
+  $("dashEntities").textContent = $("anaTotal").textContent = count;
+  $("dashTypes").textContent = $("anaTypes").textContent = types;
+  $("dashConfidence").textContent = $("anaConfidence").textContent = avg===null ? "—" : avg.toFixed(1)+"%";
+  $("anaConfidence").title = "Average of provided BERT confidence values";
+}
+function renderHighlight(text,entities) {
+  const box=$("highlighted"); box.replaceChildren();
+  const matches=[];
+  // Use the model's entity text, finding occurrences in order.
+  let searchFrom=0;
+  for(const e of entities) {
+    let at=text.indexOf(e.text,searchFrom);
+    if(at<0) at=text.indexOf(e.text);
+    if(at>=0) {matches.push({start:at,end:at+e.text.length,e});searchFrom=at+e.text.length;}
+  }
+  matches.sort((a,b)=>a.start-b.start);
+  let cursor=0;
+  for(const m of matches) {
+    if(m.start<cursor) continue;
+    box.append(document.createTextNode(text.slice(cursor,m.start)));
+    const mark=document.createElement("mark"); mark.className=m.e.type; mark.textContent=text.slice(m.start,m.end);
+    if(m.e.confidence!=null) mark.title=m.e.type+" · "+Number(m.e.confidence).toFixed(1)+"% confidence";
+    box.append(mark);cursor=m.end;
+  }
+  box.append(document.createTextNode(text.slice(cursor)));
+}
+function renderTable(entities) {
+  const body=$("rows");body.replaceChildren();
+  if(!entities.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=3;td.className="empty";td.textContent="No named entities detected.";tr.append(td);body.append(tr);return;}
+  entities.forEach(e=>{
+    const tr=document.createElement("tr");
+    const td1=document.createElement("td");td1.textContent=e.text;
+    const td2=document.createElement("td");const badge=document.createElement("span");badge.className="badge "+e.type;badge.textContent=e.type;td2.append(badge);
+    const td3=document.createElement("td");td3.textContent=e.confidence==null?"Not provided":Number(e.confidence).toFixed(2)+"%";
+    tr.append(td1,td2,td3);body.append(tr);
+  });
+  $("export").disabled=false;
+}
+function renderAnalytics(entities) {
+  const types=["PER","ORG","LOC","MISC"], labels={PER:"People",ORG:"Organizations",LOC:"Locations",MISC:"Miscellaneous"};
+  const counts=Object.fromEntries(types.map(t=>[t,entities.filter(e=>e.type===t).length]));
+  const max=Math.max(...types.map(t=>counts[t]),1);
+  $("distribution").replaceChildren();$("breakdown").replaceChildren();
+  types.forEach(t=>{
+    const row=document.createElement("div");row.className="chart-row";
+    const name=document.createElement("span");name.textContent=labels[t];
+    const bar=document.createElement("div");bar.className="smallbar";
+    const fill=document.createElement("span");fill.style.width=(counts[t]/max*100)+"%";bar.append(fill);
+    const n=document.createElement("strong");n.textContent=counts[t];row.append(name,bar,n);$("distribution").append(row);
+    const detail=document.createElement("div");detail.className="recent-item";
+    const left=document.createElement("span");left.textContent=t+" · "+labels[t];
+    const right=document.createElement("strong");right.textContent=entities.length?(counts[t]/entities.length*100).toFixed(1)+"%":"0%";
+    detail.append(left,right);$("breakdown").append(detail);
+  });
+}
+function renderRecent(text,count) {
+  recentItems.unshift({text:text.slice(0,65)+(text.length>65?"…":""),count});
+  recentItems=recentItems.slice(0,4);const box=$("recent");box.replaceChildren();
+  recentItems.forEach(item=>{
+    const row=document.createElement("div");row.className="recent-item";
+    const left=document.createElement("div");const title=document.createElement("div");title.className="recent-title";title.textContent=item.text;
+    const sub=document.createElement("div");sub.className="recent-sub";sub.textContent="BERT analysis";
+    left.append(title,sub);const right=document.createElement("span");right.className="badge PER";right.textContent=item.count+" entities";row.append(left,right);box.append(row);
+  });
+}
+$("sample").onclick=()=>{$("input").value="Elon Musk founded SpaceX in California. Sundar Pichai works at Google.";$("charCount").textContent=$("input").value.length+" / 100,000";$("message").textContent="Sample loaded. Click Analyze with BERT.";};
+$("clear").onclick=()=>{$("input").value="";$("charCount").textContent="0 / 100,000";$("message").textContent="Text cleared. Your last results remain available until you run another analysis.";};
+$("analyze").onclick=async()=>{
+  const text=$("input").value.trim();if(!text){$("message").textContent="Please enter some text first.";return;}
+  $("analyze").disabled=true;$("message").textContent="BERT is analyzing your text...";
+  try{
+    const data=await post("/analyze",text);lastEntities=data.entities||[];latestText=text;
+    renderHighlight(text,lastEntities);renderTable(lastEntities);updateMetrics(lastEntities);renderAnalytics(lastEntities);renderRecent(text,lastEntities.length);
+    $("message").textContent="Analysis complete · "+lastEntities.length+" entities detected.";
+  }catch(e){$("message").textContent="Could not analyze: "+e.message+". Check that your FastAPI backend is running.";}
+  finally{$("analyze").disabled=false;}
+};
+function chips(id,entities) {
+  const box=$(id);box.replaceChildren();
+  if(!entities.length){box.textContent="No entities detected.";box.className="chips empty";return;}
+  box.className="chips";
+  entities.forEach(e=>{const c=document.createElement("span");c.className="chip";c.textContent=e.text+" · "+e.type;box.append(c);});
+}
+$("compareSample").onclick=()=>{$("compareInput").value="Elon Musk founded SpaceX in California. Sundar Pichai works at Google.";};
+$("compare").onclick=async()=>{
+  const text=$("compareInput").value.trim();if(!text){$("compareMessage").textContent="Please enter some text first.";return;}
+  $("compare").disabled=true;$("compareMessage").textContent="Comparing BERT and CRF...";
+  try{
+    const d=await post("/compare",text);lastComparison=d;
+    const be=d.bert?.entities||[],ce=d.crf?.entities||[];
+    $("bertCount").textContent=be.length;$("crfCount").textContent=ce.length;
+    chips("bertChips",be);chips("crfChips",ce);
+    const max=Math.max(be.length,ce.length,1);
+    $("bertBar").style.width=(be.length/max*100)+"%";$("crfBar").style.width=(ce.length/max*100)+"%";
+    $("bertBarNum").textContent=be.length;$("crfBarNum").textContent=ce.length;
+    $("compareNote").textContent="BERT predicted "+be.length+" entities; CRF predicted "+ce.length+". Compare the actual labels and context: entity counts alone are not accuracy.";
+    $("exportCompare").disabled=!(be.length||ce.length);
+    $("compareMessage").textContent="Comparison complete. Both models analyzed the same text.";
+  }catch(e){$("compareMessage").textContent="Comparison failed: "+e.message+". Check that your backend is running.";}
+  finally{$("compare").disabled=false;}
+};
+function csvDownload(name,rows){
+  const csv=rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+  const url=URL.createObjectURL(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("export").onclick=()=>csvDownload("bert-ner-results.csv",[["Entity","Type","Confidence"],...lastEntities.map(e=>[e.text,e.type,e.confidence??""])]);
+$("exportCompare").onclick=()=>{
+  if(!lastComparison)return;const rows=[["Model","Entity","Type","Confidence"]];
+  for(const [name,res] of [["BERT",lastComparison.bert],["CRF",lastComparison.crf]])for(const e of(res?.entities||[]))rows.push([name,e.text,e.type,e.confidence??""]);
+  csvDownload("bert-crf-comparison.csv",rows);
+};
+</script>
+</body>
+</html>

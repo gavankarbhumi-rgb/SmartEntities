@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NER Intelligence Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg:#080b16; --panel:#11182b; --line:#283452;
+  --text:#f0f3ff; --muted:#929fbd; --purple:#a38bff;
+  --blue:#70b6ff; --green:#54e0b1; --pink:#ff8dca;
+  --orange:#ffcb75;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Segoe UI,Arial,sans-serif;
+}
+.sidebar {
+  position:fixed; inset:0 auto 0 0; width:235px;
+  background:#0b1020; border-right:1px solid var(--line);
+  padding:25px 16px; z-index:5;
+}
+.brand {font-size:21px;font-weight:800;margin-bottom:8px}
+.brand span {color:var(--purple)}
+.sub {color:var(--muted);font-size:12px;margin-bottom:35px}
+.nav {
+  display:block;width:100%;text-align:left;padding:14px;
+  margin:6px 0;border:0;border-radius:10px;
+  background:transparent;color:var(--muted);
+  font-size:14px;cursor:pointer;
+}
+.nav:hover,.nav.active {background:#252044;color:white}
+main {margin-left:235px;padding:30px;max-width:1500px}
+header {display:flex;justify-content:space-between;gap:15px;align-items:center;margin-bottom:25px}
+h1 {
+  font-size:clamp(25px,3vw,36px);margin:0 0 8px;
+  background:linear-gradient(90deg,#c4b5fd,#70b6ff,#54e0b1);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+h2 {font-size:19px;margin-top:0}
+p,.muted {color:var(--muted);line-height:1.6}
+.page {display:none}.page.active {display:block}
+.grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin:20px 0}
+.card {
+  background:linear-gradient(145deg,#151d35,#101525);
+  border:1px solid var(--line);border-radius:16px;padding:21px;
+  min-width:0;
+}
+.metric {font-size:30px;font-weight:800;margin:12px 0 5px}
+.purple {color:var(--purple)}.blue {color:var(--blue)}
+.green {color:var(--green)}.pink {color:var(--pink)}
+.orange {color:var(--orange)}
+textarea,input[type="text"] {
+  width:100%;background:#090f20;color:white;
+  border:1px solid #354263;border-radius:12px;
+  padding:15px;font:inherit;outline:none
+}
+textarea {min-height:150px;resize:vertical}
+button.action {
+  background:linear-gradient(100deg,#7655ed,#367be8);
+  color:white;border:0;border-radius:10px;padding:12px 17px;
+  font-weight:700;cursor:pointer;margin:8px 6px 8px 0
+}
+button.secondary {background:#222a42}
+button:disabled {opacity:.5;cursor:wait}
+.actions {margin:12px 0}
+.status {white-space:pre-wrap;color:#c4b5fd;margin:12px 0}
+.table-wrap {overflow-x:auto}
+table {width:100%;border-collapse:collapse;margin-top:12px}
+th,td {text-align:left;padding:12px;border-bottom:1px solid var(--line)}
+th {color:#c4b5fd}
+.tag {display:inline-block;padding:4px 9px;border-radius:7px;font-size:12px;font-weight:700}
+.PER {background:#43243f;color:#ff8dca}
+.ORG {background:#173d50;color:#70d7ff}
+.LOC {background:#174435;color:#54e0b1}
+.MISC {background:#4b3920;color:#ffcb75}
+.chips {display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip {padding:10px;border:1px solid var(--line);border-radius:10px;background:#0d1425}
+.two {display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+canvas {max-height:320px}
+small {color:var(--muted)}
+footer {margin-top:30px;color:var(--muted);font-size:12px}
+@media(max-width:760px) {
+ .sidebar {position:static;width:100%;padding:15px}
+ .sub {margin-bottom:12px}
+ .nav {display:inline-block;width:auto;padding:10px;margin:3px}
+ main {margin:0;padding:17px}
+ header {align-items:flex-start;flex-direction:column}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="brand">✦ NER <span>Studio</span></div>
+  <div class="sub">INTELLIGENT ENTITY ANALYSIS</div>
+  <button class="nav active" data-page="dashboard">▦ &nbsp; Dashboard</button>
+  <button class="nav" data-page="text">⌕ &nbsp; Text Analyzer</button>
+  <button class="nav" data-page="pdf">▤ &nbsp; PDF Analyzer</button>
+  <button class="nav" data-page="compare">⇄ &nbsp; Model Comparison</button>
+  <button class="nav" data-page="analytics">▥ &nbsp; Analytics</button>
+  <button class="nav" data-page="history">◷ &nbsp; History</button>
+  <footer>BERT + CRF · NLP Project</footer>
+</aside>
+
+<main>
+<header>
+ <div>
+  <h1 id="heading">NER Intelligence Dashboard</h1>
+  <p id="subtitle">Explore named entities with BERT and CRF models.</p>
+ </div>
+ <span class="tag ORG">● NER WORKSPACE</span>
+</header>
+
+<section class="page active" id="page-dashboard">
+ <div class="grid">
+  <div class="card"><span class="muted">Total analyses</span><div class="metric purple" id="totalAnalyses">0</div><small>Saved in this browser</small></div>
+  <div class="card"><span class="muted">Entities found</span><div class="metric blue" id="totalEntities">0</div><small>Across saved analyses</small></div>
+  <div class="card"><span class="muted">People</span><div class="metric pink" id="totalPeople">0</div><small>PER entities</small></div>
+  <div class="card"><span class="muted">Organizations</span><div class="metric green" id="totalOrgs">0</div><small>ORG entities</small></div>
+ </div>
+ <div class="two">
+  <div class="card"><h2>Entity Distribution</h2><canvas id="dashboardChart"></canvas></div>
+  <div class="card"><h2>Model Performance</h2><p>BERT test F1-score</p><div class="metric green">84.17%</div><p>CRF baseline F1-score</p><div class="metric purple">79.24%</div><p class="muted">BERT improvement: 4.93 percentage points.</p></div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>Recent Activity</h2><div id="dashboardHistory" class="muted">No activity yet. Try the Text Analyzer.</div></div>
+</section>
+
+<section class="page" id="page-text">
+ <div class="card">
+  <h2>Text Analyzer</h2>
+  <p>Enter English text to recognize people, organizations, locations and miscellaneous entities.</p>
+  <textarea id="textInput" placeholder="Example: Elon Musk founded SpaceX in California."></textarea>
+  <div class="actions">
+   <button class="action" id="analyzeBtn">Analyze with BERT</button>
+   <button class="action secondary" id="sampleBtn">Load Sample</button>
+   <button class="action secondary" id="clearBtn">Clear</button>
+   <button class="action secondary" id="textCsvBtn">Export CSV</button>
+  </div>
+  <div id="textStatus" class="status"></div>
+ </div>
+ <div class="grid" id="textStats"></div>
+ <div class="card"><h2>Detected Entities</h2><div id="textChips" class="chips"></div><div class="table-wrap" id="textTable"></div></div>
+</section>
+
+<section class="page" id="page-pdf">
+ <div class="card">
+  <h2>PDF Intelligence Analyzer</h2>
+  <p>Upload a text-based PDF. Scanned image-only PDFs require OCR.</p>
+  <input id="pdfFile" type="file" accept=".pdf,application/pdf">
+  <div class="actions">
+   <button class="action" id="pdfAnalyze" disabled>Analyze PDF with BERT</button>
+   <button class="action secondary" id="pdfCompare" disabled>Compare BERT vs CRF</button>
+   <button class="action secondary" id="pdfCsv" disabled>Download CSV</button>
+  </div>
+  <div id="pdfStatus" class="status">Choose a PDF to begin.</div>
+  <div id="pdfStats" class="grid"></div>
+  <div id="pdfResults" class="table-wrap"></div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>PDF Entity Distribution</h2><canvas id="pdfChart"></canvas></div>
+</section>
+
+<section class="page" id="page-compare">
+ <div class="card">
+  <h2>BERT vs CRF</h2>
+  <p>Both models analyze the same input. Entity counts are not accuracy scores.</p>
+  <textarea id="compareInput" placeholder="Enter text to compare both models...">Elon Musk founded SpaceX in California.</textarea>
+  <div class="actions"><button class="action" id="compareBtn">Compare Models</button><button class="action secondary" id="compareCsvBtn">Export Comparison CSV</button></div>
+  <div id="compareStatus" class="status"></div>
+ </div>
+ <div class="two" style="margin-top:16px">
+  <div class="card"><h2 class="blue">BERT Transformer</h2><div class="metric blue" id="bertCount">0</div><div id="bertChips" class="chips"></div></div>
+  <div class="card"><h2 class="purple">CRF Baseline</h2><div class="metric purple" id="crfCount">0</div><div id="crfChips" class="chips"></div></div>
+ </div>
+ <div class="card" style="margin-top:16px"><h2>Entity Count Comparison</h2><canvas id="compareChart"></canvas></div>
+</section>
+
+<section class="page" id="page-analytics">
+ <div class="grid">
+  <div class="card"><span class="muted">BERT Precision</span><div class="metric blue">82.68%</div></div>
+  <div class="card"><span class="muted">BERT Recall</span><div class="metric green">85.71%</div></div>
+  <div class="card"><span class="muted">BERT F1-score</span><div class="metric purple">84.17%</div></div>
+  <div class="card"><span class="muted">CRF F1-score</span><div class="metric pink">79.24%</div></div>
+ </div>
+ <div class="two">
+  <div class="card"><h2>Entity Distribution</h2><canvas id="analyticsChart"></canvas></div>
+  <div class="card"><h2>Model Metrics</h2><canvas id="metricsChart"></canvas></div>
+ </div>
+ <p class="muted">Performance values are from your previously measured CoNLL-2003 test evaluation, not from the current input.</p>
+</section>
+
+<section class="page" id="page-history">
+ <div class="card">
+  <h2>Analysis History</h2>
+  <p>History is stored in this browser on this device. It is not yet shared between users or devices.</p>
+  <button class="action secondary" id="refreshHistory">Refresh History</button>
+  <button class="action secondary" id="clearHistory">Clear History</button>
+  <div class="table-wrap" id="historyTable"></div>
+ </div>
+</section>
+</main>
+
+<script>
+const API = "http://127.0.0.1:8000";
+const TYPES = ["PER","ORG","LOC","MISC"];
+const COLORS = ["#ff8dca","#70b6ff","#54e0b1","#ffcb75"];
+let latestTextEntities = [];
+let latestCompare = [];
+let latestPdfEntities = [];
+let latestPdfComparison = [];
+let pdfText = "";
+let pdfChart, dashboardChart, analyticsChart, compareChart, metricsChart;
+
+if (window.pdfjsLib) {
+ pdfjsLib.GlobalWorkerOptions.workerSrc =
+ "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+const titles = {
+ dashboard:["NER Intelligence Dashboard","Explore named entities with BERT and CRF models."],
+ text:["Text Analyzer","Analyze text and inspect recognized entities."],
+ pdf:["PDF Analyzer","Extract and analyze entities from PDF documents."],
+ compare:["Model Comparison","Compare BERT predictions with the CRF baseline."],
+ analytics:["Analytics","Explore model evaluation metrics and entity distributions."],
+ history:["Analysis History","Review recent analyses saved in this browser."]
+};
+
+document.querySelectorAll(".nav").forEach(btn => btn.addEventListener("click", () => {
+ document.querySelectorAll(".nav").forEach(b => b.classList.remove("active"));
+ document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+ btn.classList.add("active");
+ document.getElementById("page-"+btn.dataset.page).classList.add("active");
+ document.getElementById("heading").textContent = titles[btn.dataset.page][0];
+ document.getElementById("subtitle").textContent = titles[btn.dataset.page][1];
+ if(btn.dataset.page === "history") renderHistory();
+}));
+
+async function post(path,text) {
+ const response = await fetch(API+path,{
+  method:"POST",headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({text})
+ });
+ if(!response.ok) {
+  let detail = "";
+  try { detail = (await response.json()).detail || ""; } catch {}
+  throw new Error(detail || `API error ${response.status}`);
+ }
+ return response.json();
+}
+function escapeHtml(s) {
+ return String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function entityTag(e) {
+ const type = TYPES.includes(e.type) ? e.type : "MISC";
+ return `<span class="tag ${type}">${escapeHtml(e.text)} · ${type}</span>`;
+}
+function confidence(e) {
+ const n=Number(e.confidence);
+ return Number.isFinite(n) ? (n<=1?n*100:n).toFixed(2)+"%" : "N/A";
+}
+function entityTable(entities) {
+ if(!entities.length) return "<p class='muted'>No entities recognized.</p>";
+ return `<table><thead><tr><th>#</th><th>Entity</th><th>Type</th><th>Confidence</th></tr></thead><tbody>`+
+ entities.map((e,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(e.text)}</td><td>${entityTag({text:e.type,type:e.type})}</td><td>${confidence(e)}</td></tr>`).join("")+
+ `</tbody></table>`;
+}
+function counts(entities) {
+ return TYPES.map(t=>entities.filter(e=>e.type===t).length);
+}
+function makeChart(id,type,labels,data,colors=COLORS) {
+ const el=document.getElementById(id);
+ if(!el) return null;
+ return new Chart(el,{
+  type,data:{labels,datasets:[{label:"Entities",data,backgroundColor:colors,borderColor:colors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:"#dce4ff"}}},
+   scales:type==="bar"?{x:{ticks:{color:"#aab5d1"},grid:{color:"#283452"}},y:{beginAtZero:true,ticks:{color:"#aab5d1"},grid:{color:"#283452"}}}:{}
+  }
+ });
+}
+function updateChart(chart,labels,data) {
+ if(!chart) return;
+ chart.data.labels=labels; chart.data.datasets[0].data=data; chart.update();
+}
+function getHistory() {
+ try { return JSON.parse(localStorage.getItem("nerStudioHistory")||"[]"); }
+ catch { return []; }
+}
+function saveHistory(kind,text,entities,extra={}) {
+ const history=getHistory();
+ history.unshift({
+  id:Date.now(),kind,text:text.slice(0,500),time:new Date().toLocaleString(),
+  count:entities.length,entities:entities.slice(0,100),...extra
+ });
+ localStorage.setItem("nerStudioHistory",JSON.stringify(history.slice(0,100)));
+ renderDashboard(); renderHistory();
+}
+function renderDashboard() {
+ const h=getHistory();
+ const all=h.flatMap(x=>x.entities||[]);
+ document.getElementById("totalAnalyses").textContent=h.length;
+ document.getElementById("totalEntities").textContent=all.length;
+ document.getElementById("totalPeople").textContent=all.filter(e=>e.type==="PER").length;
+ document.getElementById("totalOrgs").textContent=all.filter(e=>e.type==="ORG").length;
+ const c=counts(all);
+ updateChart(dashboardChart,TYPES,c);
+ updateChart(analyticsChart,TYPES,c);
+ document.getElementById("dashboardHistory").innerHTML=h.length?
+ h.slice(0,5).map(x=>`<p><strong>${escapeHtml(x.kind)}</strong> · ${escapeHtml(x.time)} · ${x.count} entities</p>`).join(""):"No activity yet. Try the Text Analyzer.";
+}
+function renderHistory() {
+ const h=getHistory();
+ document.getElementById("historyTable").innerHTML=h.length?
+ `<table><thead><tr><th>Type</th><th>Date</th><th>Entities</th><th>Input preview</th></tr></thead><tbody>`+
+ h.map(x=>`<tr><td>${escapeHtml(x.kind)}</td><td>${escapeHtml(x.time)}</td><td>${x.count}</td><td>${escapeHtml(x.text)}</td></tr>`).join("")+
+ `</tbody></table>`:"<p class='muted'>No saved analyses yet.</p>";
+}
+function exportCsv(filename,rows) {
+ if(!rows.length){alert("There are no results to export yet.");return;}
+ const quote=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ const csv=[["Model","Entity","Type","Confidence"],...rows.map(e=>[e.model||"BERT",e.text,e.type,e.confidence??""])].map(r=>r.map(quote).join(",")).join("\r\n");
+ const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob);const a=document.createElement("a");
+ a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+}
+
+document.getElementById("sampleBtn").onclick=()=>document.getElementById("textInput").value="Elon Musk founded SpaceX in California. Sundar Pichai works at Google.";
+document.getElementById("clearBtn").onclick=()=>{
+ document.getElementById("textInput").value="";
+ document.getElementById("textStatus").textContent="";
+ document.getElementById("textStats").innerHTML="";
+ document.getElementById("textChips").innerHTML="";
+ document.getElementById("textTable").innerHTML="";
+ latestTextEntities=[];
+};
+document.getElementById("analyzeBtn").onclick=async()=>{
+ const text=document.getElementById("textInput").value.trim();
+ if(!text){document.getElementById("textStatus").textContent="Please enter some text first.";return;}
+ const btn=document.getElementById("analyzeBtn");btn.disabled=true;
+ document.getElementById("textStatus").textContent="Analyzing with BERT...";
+ try{
+  const data=await post("/analyze",text);latestTextEntities=data.entities||[];
+  document.getElementById("textStats").innerHTML=`
+   <div class="card">Entities found<div class="metric purple">${latestTextEntities.length}</div></div>
+   <div class="card">People<div class="metric pink">${latestTextEntities.filter(e=>e.type==="PER").length}</div></div>
+   <div class="card">Organizations<div class="metric blue">${latestTextEntities.filter(e=>e.type==="ORG").length}</div></div>
+   <div class="card">Locations<div class="metric green">${latestTextEntities.filter(e=>e.type==="LOC").length}</div></div>`;
+  document.getElementById("textChips").innerHTML=latestTextEntities.map(entityTag).join("");
+  document.getElementById("textTable").innerHTML=entityTable(latestTextEntities);
+  document.getElementById("textStatus").textContent="Analysis complete.";
+  saveHistory("Text",text,latestTextEntities);
+ }catch(e){document.getElementById("textStatus").textContent="Analysis failed: "+e.message+". Check that the backend is running.";}
+ finally{btn.disabled=false;}
+};
+document.getElementById("textCsvBtn").onclick=()=>exportCsv("text_ner_results.csv",latestTextEntities);
+
+document.getElementById("compareBtn").onclick=async()=>{
+ const text=document.getElementById("compareInput").value.trim();
+ if(!text){document.getElementById("compareStatus").textContent="Please enter text first.";return;}
+ const btn=document.getElementById("compareBtn");btn.disabled=true;
+ document.getElementById("compareStatus").textContent="Comparing models...";
+ try{
+  const d=await post("/compare",text);
+  const b=d.bert?.entities||[],c=d.crf?.entities||[];
+  latestCompare=[...b.map(e=>({...e,model:"BERT"})),...c.map(e=>({...e,model:"CRF"}))];
+  document.getElementById("bertCount").textContent=b.length;
+  document.getElementById("crfCount").textContent=c.length;
+  document.getElementById("bertChips").innerHTML=b.map(entityTag).join("")||"No entities found.";
+  document.getElementById("crfChips").innerHTML=c.map(entityTag).join("")||"No entities found.";
+  updateChart(compareChart,["BERT","CRF"],[b.length,c.length]);
+  document.getElementById("compareStatus").textContent="Comparison complete. Entity counts do not measure accuracy.";
+  saveHistory("Comparison",text,[...b,...c],{models:{bert:b.length,crf:c.length}});
+ }catch(e){document.getElementById("compareStatus").textContent="Comparison failed: "+e.message;}
+ finally{btn.disabled=false;}
+};
+document.getElementById("compareCsvBtn").onclick=()=>exportCsv("bert_crf_comparison.csv",latestCompare);
+
+function splitChunks(text,max=1200) {
+ const sentences=text.match(/[^.!?。！？\n]+[.!?。！？]?/g)||[text];
+ const chunks=[];let current="";
+ for(const sentence of sentences){
+  const s=sentence.trim();if(!s)continue;
+  if(s.length>max){if(current)chunks.push(current);current="";
+   for(let i=0;i<s.length;i+=max)chunks.push(s.slice(i,i+max));continue;}
+  if((current+" "+s).trim().length>max){if(current)chunks.push(current);current=s;}
+  else current=(current+" "+s).trim();
+ }
+ if(current)chunks.push(current);return chunks;
+}
+document.getElementById("pdfFile").onchange=async e=>{
+ pdfText="";latestPdfEntities=[];latestPdfComparison=[];
+ document.getElementById("pdfAnalyze").disabled=true;
+ document.getElementById("pdfCompare").disabled=true;
+ document.getElementById("pdfCsv").disabled=true;
+ const file=e.target.files?.[0];if(!file)return;
+ const status=document.getElementById("pdfStatus");
+ try{
+  status.textContent="Reading PDF...";
+  if(!window.pdfjsLib)throw new Error("PDF reader failed to load. Check internet connection.");
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const pages=[];
+  for(let i=1;i<=pdf.numPages;i++){
+   status.textContent=`Extracting page ${i} of ${pdf.numPages}...`;
+   const page=await pdf.getPage(i);const content=await page.getTextContent();
+   const text=content.items.map(x=>x.str).join(" ");if(text.trim())pages.push(text);
+  }
+  pdfText=pages.join("\n\n").trim();
+  if(!pdfText)throw new Error("No selectable text found. Scanned PDFs need OCR.");
+  status.textContent=`PDF ready: ${pdf.numPages} pages, ${pdfText.length.toLocaleString()} characters.`;
+  document.getElementById("pdfAnalyze").disabled=false;
+  document.getElementById("pdfCompare").disabled=false;
+ }catch(err){status.textContent="Could not read PDF: "+err.message;}
+};
+document.getElementById("pdfAnalyze").onclick=async()=>{
+ const chunks=splitChunks(pdfText);latestPdfEntities=[];
+ const btn=document.getElementById("pdfAnalyze");btn.disabled=true;
+ document.getElementById("pdfCompare").disabled=true;
+ try{
+  for(let i=0;i<chunks.length;i++){
+   document.getElementById("pdfStatus").textContent=`Analyzing PDF chunk ${i+1} of ${chunks.length}...`;
+   const d=await post("/analyze",chunks[i]);latestPdfEntities.push(...(d.entities||[]));
+  }
+  document.getElementById("pdfStats").innerHTML=`
+   <div class="card">Characters<div class="metric purple">${pdfText.length.toLocaleString()}</div></div>
+   <div class="card">Entities<div class="metric blue">${latestPdfEntities.length}</div></div>
+   <div class="card">People<div class="metric pink">${latestPdfEntities.filter(e=>e.type==="PER").length}</div></div>
+   <div class="card">Organizations<div class="metric green">${latestPdfEntities.filter(e=>e.type==="ORG").length}</div></div>`;
+  document.getElementById("pdfResults").innerHTML=entityTable(latestPdfEntities);
+  updateChart(pdfChart,TYPES,counts(latestPdfEntities));
+  document.getElementById("pdfStatus").textContent=`PDF analysis complete: ${latestPdfEntities.length} entities found. Predictions may contain errors.`;
+  document.getElementById("pdfCsv").disabled=!latestPdfEntities.length;
+  document.getElementById("pdfCompare").disabled=false;
+  saveHistory("PDF",pdfText,latestPdfEntities);
+ }catch(err){document.getElementById("pdfStatus").textContent="PDF analysis failed: "+err.message;}
+ finally{btn.disabled=false;}
+};
+document.getElementById("pdfCompare").onclick=async()=>{
+ const chunks=splitChunks(pdfText);const b=[],c=[];
+ const btn=document.getElementById("pdfCompare");btn.disabled=true;
+ try{
+  for(let i=0;i<chunks.length;i++){
+   document.getElementById("pdfStatus").textContent=`Comparing PDF chunk ${i+1} of ${chunks.length}...`;
+   const d=await post("/compare",chunks[i]);b.push(...(d.bert?.entities||[]));c.push(...(d.crf?.entities||[]));
+  }
+  latestPdfComparison=[...b.map(e=>({...e,model:"BERT"})),...c.map(e=>({...e,model:"CRF"}))];
+  document.getElementById("pdfStatus").textContent=`PDF comparison complete. BERT: ${b.length}; CRF: ${c.length} entities. Counts are not accuracy scores.`;
+  document.getElementById("pdfCsv").disabled=false;
+  saveHistory("PDF Comparison",pdfText,[...b,...c],{models:{bert:b.length,crf:c.length}});
+ }catch(err){document.getElementById("pdfStatus").textContent="Comparison failed: "+err.message;}
+ finally{btn.disabled=false;}
+};
+document.getElementById("pdfCsv").onclick=()=>{
+ const rows=latestPdfComparison.length?latestPdfComparison:latestPdfEntities;
+ exportCsv("ner_pdf_results.csv",rows);
+};
+document.getElementById("refreshHistory").onclick=renderHistory;
+document.getElementById("clearHistory").onclick=()=>{
+ if(confirm("Delete all saved history from this browser?")){
+  localStorage.removeItem("nerStudioHistory");renderDashboard();renderHistory();
+ }
+};
+
+dashboardChart=makeChart("dashboardChart","doughnut",TYPES,[0,0,0,0]);
+analyticsChart=makeChart("analyticsChart","bar",TYPES,[0,0,0,0]);
+pdfChart=makeChart("pdfChart","bar",TYPES,[0,0,0,0]);
+compareChart=makeChart("compareChart","bar",["BERT","CRF"],[0,0],["#70b6ff","#a38bff"]);
+metricsChart=makeChart("metricsChart","bar",["Precision","Recall","F1-score"],[82.68,85.71,84.17],["#70b6ff","#54e0b1","#a38bff"]);
+renderDashboard();renderHistory();
+</script>
+</body>
+</html>
